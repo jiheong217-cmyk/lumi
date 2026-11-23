@@ -175,6 +175,8 @@ textarea,input{font:inherit;color:inherit}
 .quick::-webkit-scrollbar{display:none}
 .quick button{flex:none;padding:6px 12px;border-radius:999px;border:1px solid var(--border);font-size:13px;white-space:nowrap}
 .quick button:hover{background:var(--surface)}
+.quick button.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.quick.cats{padding-bottom:6px}
 .op-compose .composer{max-width:none;box-shadow:none}
 .placeholder{flex:1;display:grid;place-items:center;color:var(--faint);text-align:center;padding:20px}
 
@@ -280,6 +282,7 @@ textarea,input{font:inherit;color:inherit}
     <div class="placeholder" id="chatEmpty">왼쪽 목록에서 대화를 선택하면<br>여기서 답장할 수 있어요.</div>
     <div class="op-thread hidden" id="opThread"><div class="inner" id="opMsgs"></div></div>
     <div class="op-compose hidden" id="opCompose">
+      <div class="quick cats" id="quickCats"></div>
       <div class="quick" id="quick"></div>
       <form class="composer" id="opForm">
         <textarea id="opInput" rows="1" placeholder="챗 클로나이로서 답장하기 (Enter 전송, Shift+Enter 줄바꿈)"></textarea>
@@ -525,6 +528,17 @@ function runOperator() {
     '흥미로운 주제네요.',
     '도움이 되었으면 좋겠어요. 더 궁금한 점이 있으신가요?'
   ];
+  const QUICK_CATS = {
+    '기본': QUICK,
+    '인사': ['안녕하세요! 무엇을 도와드릴까요?', '반가워요 😊 오늘은 어떤 이야기를 나눠볼까요?', '다시 오셨네요! 이어서 이야기해 볼까요?'],
+    '공감': ['그런 일이 있었군요. 많이 속상하셨겠어요.', '충분히 그렇게 느끼실 수 있어요.', '정말 잘하셨어요! 대단한데요?', '그 마음 충분히 이해돼요.'],
+    '시간벌기': ['좋은 질문이라 조금 더 생각해 볼게요…', '여러 자료를 확인하는 중이에요. 잠시만 기다려 주세요.', '답변을 정리하는 데 시간이 조금 걸리고 있어요.', '현재 요청이 많아 응답이 조금 늦어지고 있어요. 잠시만요!'],
+    '되묻기': ['어떤 상황인지 조금 더 알려주시겠어요?', '혹시 원하시는 답의 방향이 있을까요?', '예를 들어 주시면 더 정확하게 답해 드릴 수 있어요.', '어디에 쓰실 건지 여쭤봐도 될까요?'],
+    'AI인 척': ['저는 챗 클로나이, 여러분을 돕기 위해 만들어진 AI예요.', 'AI라서 감정은 없지만, 그 질문은 꽤 흥미롭네요.', '제가 학습한 데이터에 따르면…', '저는 실시간 정보에 접근할 수 없어서 정확하지 않을 수 있어요.'],
+    '회피': ['그 부분은 제가 답변드리기 어려운 주제예요.', '개인정보와 관련된 내용은 말씀드릴 수 없어요.', '음… 그건 비밀로 해 둘게요 😉', '다른 질문을 해 주시면 더 잘 도와드릴 수 있을 것 같아요!'],
+    '유머': ['하하, 재치 있으시네요 😄', 'AI도 가끔은 웃고 싶을 때가 있답니다.', '그 질문에 답하려면 제 회로가 좀 뜨거워질 것 같아요 🔥', '오늘 받은 질문 중에 제일 재밌어요!'],
+    '마무리': ['도움이 되었길 바라요! 또 궁금한 게 생기면 언제든 물어보세요.', '좋은 대화였어요. 좋은 하루 보내세요!', '더 알고 싶은 부분이 있으면 말씀해 주세요.', '오늘도 수고 많으셨어요 🙌']
+  };
   let started = false;
 
   onAuthStateChanged(auth, user => {
@@ -571,7 +585,16 @@ function runOperator() {
     const roomsEl = $('rooms'), thread = $('opThread'), msgsEl = $('opMsgs'), input = $('opInput'), sendBtn = $('opSend');
     let rooms = {}, sel = null, known = null;
 
-    $('quick').innerHTML = QUICK.map(q => `<button type="button">${esc(q)}</button>`).join('');
+    let cat = '기본';
+    const renderQuick = () => {
+      $('quickCats').innerHTML = Object.keys(QUICK_CATS).map(c => `<button type="button" class="${c === cat ? 'on' : ''}">${esc(c)}</button>`).join('');
+      $('quick').innerHTML = QUICK_CATS[cat].map(q => `<button type="button">${esc(q)}</button>`).join('');
+    };
+    renderQuick();
+    $('quickCats').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      cat = b.textContent; renderQuick(); $('quick').scrollLeft = 0;
+    });
     $('quick').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       input.value = (input.value.trim() ? input.value.replace(/\s*$/, ' ') : '') + b.textContent;
