@@ -2,6 +2,15 @@
   "rules": {
     ".read": false,
     ".write": false,
+    "status": {
+      ".read": "auth != null",
+      "ops": {
+        "$id": {
+          ".write": "auth != null && auth.token.email == 'lumi.operator@example.com'",
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
     "rooms": {
       ".read": "auth != null && auth.token.email == 'lumi.operator@example.com'",
       ".indexOn": ["updated"],
