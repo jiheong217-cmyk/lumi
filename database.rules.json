@@ -1,0 +1,44 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      ".read": "auth != null && auth.token.email == 'lumi.operator@example.com'",
+      ".indexOn": ["updated"],
+      "$room": {
+        ".read": "auth != null && $room.beginsWith(auth.uid + '_')",
+        "u": {
+          "$msg": {
+            ".write": "auth != null && $room.beginsWith(auth.uid + '_') && !data.exists() && newData.exists()",
+            ".validate": "newData.hasChildren(['t', 'ts'])",
+            "t": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 4000" },
+            "ts": { ".validate": "newData.val() == now" },
+            "$other": { ".validate": false }
+          }
+        },
+        "a": {
+          "$msg": {
+            ".write": "auth != null && auth.token.email == 'lumi.operator@example.com'",
+            ".validate": "newData.hasChildren(['t', 'ts'])",
+            "t": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20000" },
+            "ts": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        },
+        "typing": {
+          ".write": "auth != null && auth.token.email == 'lumi.operator@example.com'",
+          ".validate": "newData.isBoolean()"
+        },
+        "seen": {
+          ".write": "auth != null && auth.token.email == 'lumi.operator@example.com'",
+          ".validate": "newData.isNumber() && newData.val() <= now"
+        },
+        "updated": {
+          ".write": "auth != null && ($room.beginsWith(auth.uid + '_') || auth.token.email == 'lumi.operator@example.com')",
+          ".validate": "newData.isNumber() && newData.val() <= now"
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}
