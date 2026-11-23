@@ -22,6 +22,7 @@
             ".validate": "newData.hasChildren(['t', 'ts'])",
             "t": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 4000" },
             "ts": { ".validate": "newData.val() == now" },
+            "m": { ".validate": "newData.isString() && newData.val().length <= 20" },
             "$other": { ".validate": false }
           }
         },
@@ -37,6 +38,10 @@
         "typing": {
           ".write": "auth != null && auth.token.email == 'lumi.operator@example.com'",
           ".validate": "newData.isBoolean()"
+        },
+        "st": {
+          ".write": "auth != null && auth.token.email == 'lumi.operator@example.com'",
+          ".validate": "newData.isString() && newData.val().length <= 40"
         },
         "seen": {
           ".write": "auth != null && auth.token.email == 'lumi.operator@example.com'",
