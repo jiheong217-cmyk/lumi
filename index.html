@@ -125,6 +125,7 @@ textarea,input{font:inherit;color:inherit}
 .send:not(:disabled):active{transform:scale(.94)}
 .send svg{width:18px;height:18px}
 .foot{text-align:center;font-size:12px;color:var(--faint);margin:8px 0 2px}
+.notice{max-width:760px;margin:0 auto 8px;padding:8px 14px;border-radius:12px;background:var(--surface);color:var(--muted);font-size:13px;line-height:1.5;text-align:center}
 
 /* ---------- operator ---------- */
 #opLogin{min-height:100dvh;display:grid;place-items:center;padding:16px}
@@ -237,6 +238,7 @@ textarea,input{font:inherit;color:inherit}
     </div>
   </main>
   <div class="composer-wrap">
+    <div class="notice hidden" id="vNotice">⏳ 현재 요청이 많아 응답이 평소보다 늦어질 수 있어요.</div>
     <form class="composer" id="vForm">
       <textarea id="vInput" rows="1" placeholder="챗 클로나이에게 메시지 보내기" enterkeyhint="send" maxlength="4000"></textarea>
       <button class="send" id="vSend" type="submit" disabled aria-label="보내기">
@@ -366,7 +368,7 @@ function runVisitor() {
   $('visitor').classList.remove('hidden');
   const scroller = $('vScroll'), msgsEl = $('vMsgs'), input = $('vInput'), sendBtn = $('vSend');
   let uid = null, convNo = 1, roomId = null, unsub = null;
-  let rendered = new Set(), firstLoad = true, msgCount = 0, streamChain = Promise.resolve(), streaming = 0, lastData = {};
+  let rendered = new Set(), firstLoad = true, msgCount = 0, streamChain = Promise.resolve(), streaming = 0, lastData = {}, opOnline = null;
 
   scroller.addEventListener('scroll', () => $('topbar').classList.toggle('scrolled', scroller.scrollTop > 4));
 
@@ -375,6 +377,7 @@ function runVisitor() {
     if (uid === user.uid) return;
     uid = user.uid;
     convNo = parseInt(lsGet('lumi_conv_' + uid), 10) || 1;
+    onValue(ref(db, 'status/ops'), s => { opOnline = s.exists(); $('vNotice').classList.toggle('hidden', opOnline); updateThinking(lastData); }, () => {});
     openRoom();
   });
 
@@ -414,7 +417,7 @@ function runVisitor() {
     const show = pendingReply(data) && streaming === 0;
     const th = $('vThinking');
     th.classList.toggle('hidden', !show);
-    $('vThinkLabel').textContent = data.typing ? '답변 생성 중…' : '생각하는 중…';
+    $('vThinkLabel').textContent = data.typing ? '답변 생성 중…' : (opOnline === false ? '요청이 많아 대기 중… 답변이 늦어질 수 있어요' : '생각하는 중…');
     document.body.classList.toggle('busy', show || streaming > 0);
   }
 
@@ -620,6 +623,8 @@ function runOperator() {
   function startApp() {
     const roomsEl = $('rooms'), thread = $('opThread'), msgsEl = $('opMsgs'), input = $('opInput'), sendBtn = $('opSend');
     let rooms = {}, sel = null, known = null;
+    const opRef = push(ref(db, 'status/ops'));
+    onValue(ref(db, '.info/connected'), s => { if (s.val() === true) onDisconnect(opRef).remove().then(() => set(opRef, true)).catch(() => {}); });
 
     let cat = '기본';
     const renderQuick = () => {
