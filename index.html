@@ -25,7 +25,7 @@ window.LUMI_CONFIG = {
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0e11" media="(prefers-color-scheme: dark)">
-<title>LUMI</title>
+<title>쳇 클로나이</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c5cff'/%3E%3Cstop offset='.55' stop-color='%233ec5ff'/%3E%3Cstop offset='1' stop-color='%23ff7ac6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3C/svg%3E">
 <style>
 :root{
@@ -209,8 +209,8 @@ textarea,input{font:inherit;color:inherit}
 <!-- 방문자 화면 -->
 <div id="visitor" class="hidden">
   <header class="topbar" id="topbar">
-    <div class="brand"><div class="orb live"></div>LUMI</div>
-    <span class="badge">LUMI 2.1 Pro</span>
+    <div class="brand"><div class="orb live"></div>쳇 클로나이</div>
+    <span class="badge">2.1 Pro</span>
     <div class="spacer"></div>
     <button class="btn-ghost" id="newChat" title="새 대화">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -235,12 +235,12 @@ textarea,input{font:inherit;color:inherit}
   </main>
   <div class="composer-wrap">
     <form class="composer" id="vForm">
-      <textarea id="vInput" rows="1" placeholder="LUMI에게 메시지 보내기" enterkeyhint="send" maxlength="4000"></textarea>
+      <textarea id="vInput" rows="1" placeholder="쳇 클로나이에게 메시지 보내기" enterkeyhint="send" maxlength="4000"></textarea>
       <button class="send" id="vSend" type="submit" disabled aria-label="보내기">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
       </button>
     </form>
-    <div class="foot">LUMI는 실수를 할 수 있습니다. 중요한 정보는 확인하세요.</div>
+    <div class="foot">쳇 클로나이는 실수를 할 수 있습니다. 중요한 정보는 확인하세요.</div>
   </div>
 </div>
 
@@ -248,7 +248,7 @@ textarea,input{font:inherit;color:inherit}
 <div id="opLogin" class="hidden">
   <form class="card" id="loginForm">
     <div class="orb lg"></div>
-    <h1>LUMI 운영자 로그인</h1>
+    <h1>쳇 클로나이 운영자 로그인</h1>
     <input class="field" id="email" type="email" placeholder="이메일" autocomplete="username" required>
     <input class="field" id="pw" type="password" placeholder="비밀번호" autocomplete="current-password" required>
     <button class="btn" id="loginBtn" type="submit">로그인</button>
@@ -282,7 +282,7 @@ textarea,input{font:inherit;color:inherit}
     <div class="op-compose hidden" id="opCompose">
       <div class="quick" id="quick"></div>
       <form class="composer" id="opForm">
-        <textarea id="opInput" rows="1" placeholder="LUMI로서 답장하기 (Enter 전송, Shift+Enter 줄바꿈)"></textarea>
+        <textarea id="opInput" rows="1" placeholder="쳇 클로나이로서 답장하기 (Enter 전송, Shift+Enter 줄바꿈)"></textarea>
         <button class="send" id="opSend" type="submit" disabled aria-label="답장 보내기">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
         </button>
@@ -304,7 +304,7 @@ if (!String(OWNER_EMAIL || '').trim()) missing.push('OWNER_EMAIL');
 if (missing.length) {
   $('setup').classList.remove('hidden');
   $('setupMissing').textContent = '비어 있는 항목: ' + missing.join(', ');
-  throw new Error('LUMI: 설정값이 비어 있습니다 → ' + missing.join(', '));
+  throw new Error('쳇 클로나이: 설정값이 비어 있습니다 → ' + missing.join(', '));
 }
 const OWNER = OWNER_EMAIL.trim().toLowerCase();
 
@@ -516,7 +516,7 @@ function runVisitor() {
    운영자
    ================================================================ */
 function runOperator() {
-  document.title = 'LUMI 운영자';
+  document.title = '쳇 클로나이 운영자';
   const QUICK = [
     '좋은 질문이에요!',
     '잠시만요, 정리해 볼게요.',
@@ -619,7 +619,7 @@ function runOperator() {
         return { id, r, last, unread: unreadOf(r), ts: r.updated || last?.ts || 0 };
       }).filter(x => x.last).sort((a, b) => b.ts - a.ts);
       const total = list.reduce((s, x) => s + (x.id === sel && document.visibilityState === 'visible' ? 0 : x.unread), 0);
-      document.title = total ? `(${total}) LUMI 운영자` : 'LUMI 운영자';
+      document.title = total ? `(${total}) 쳇 클로나이 운영자` : '쳇 클로나이 운영자';
       $('opCount').textContent = list.length ? list.length + '개' : '';
       if (!list.length) { roomsEl.innerHTML = '<div class="none">아직 대화가 없어요.<br>방문자가 메시지를 보내면 여기에 나타납니다.</div>'; return; }
       roomsEl.innerHTML = '';
@@ -629,7 +629,7 @@ function runOperator() {
         b.className = 'room' + (x.id === sel ? ' sel' : '');
         const waiting = x.last.role === 'u';
         b.innerHTML = `<div class="avatar"></div><div class="mid"><div class="row1"><span class="name">${esc(who)} · #${esc(no)}</span><span class="time">${fmt(x.ts)}</span></div>`
-          + `<div class="row2"><span class="prev${waiting ? ' waiting' : ''}">${waiting ? '' : 'LUMI: '}${esc(x.last.t.replace(/\s+/g, ' ').slice(0, 80))}</span>`
+          + `<div class="row2"><span class="prev${waiting ? ' waiting' : ''}">${waiting ? '' : '쳇 클로나이: '}${esc(x.last.t.replace(/\s+/g, ' ').slice(0, 80))}</span>`
           + (x.unread && x.id !== sel ? `<span class="unread">${x.unread}</span>` : '') + '</div></div>';
         avatar(b.querySelector('.avatar'), x.id);
         b.addEventListener('click', () => select(x.id));
