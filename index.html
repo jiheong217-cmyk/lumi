@@ -313,7 +313,7 @@ const { initializeApp } = await import(V + 'firebase-app.js');
 const { getAuth, onAuthStateChanged, signInAnonymously, signInWithEmailAndPassword, signOut } = await import(V + 'firebase-auth.js');
 const { getDatabase, ref, onValue, push, update, set, serverTimestamp, query, orderByChild, limitToLast, onDisconnect } = await import(V + 'firebase-database.js');
 
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig, IS_OP ? 'lumi-operator' : '[DEFAULT]');
 const auth = getAuth(app);
 const db = getDatabase(app);
 
