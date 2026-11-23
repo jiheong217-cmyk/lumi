@@ -488,7 +488,7 @@ function runVisitor() {
     th.classList.toggle('hidden', !show);
     const lastU = listMsgs(data).filter(x => x.role === 'u').pop();
     const base = data.st || (data.typing ? '답변 생성 중…' : (opOnline === false ? '요청이 많아 대기 중… 답변이 늦어질 수 있어요' : MODELS[model].think));
-    $('vThinkLabel').textContent = show && model === 'ultra' && lastU ? base + ' ' + Math.max(0, Math.round((Date.now() - lastU.ts) / 1000)) + '초' : base;
+    $('vThinkLabel').textContent = show && model === 'ultra' && lastU ? base + ' · ' + ((n => n < 60 ? n + '초' : Math.floor(n / 60) + '분 ' + (n % 60) + '초')(Math.max(0, Math.round((Date.now() - lastU.ts) / 1000)))) : base;
     clearTimeout(thinkTimer);
     if (show && model === 'ultra') thinkTimer = setTimeout(() => updateThinking(lastData), 1000);
     document.body.classList.toggle('busy', show || streaming > 0);
