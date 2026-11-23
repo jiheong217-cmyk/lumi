@@ -128,6 +128,28 @@ textarea,input{font:inherit;color:inherit}
 .send svg{width:18px;height:18px}
 .foot{text-align:center;font-size:12px;color:var(--faint);margin:8px 0 2px}
 .notice{max-width:760px;margin:0 auto 8px;padding:8px 14px;border-radius:12px;background:var(--surface);color:var(--muted);font-size:13px;line-height:1.5;text-align:center}
+.model-btn{display:inline-flex;align-items:center;gap:3px;cursor:pointer}
+.model-btn svg{width:12px;height:12px}
+.menu{position:absolute;top:52px;left:12px;z-index:20;width:min(300px,calc(100vw - 24px));background:var(--bg);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:6px}
+.menu button{display:flex;width:100%;text-align:left;gap:10px;align-items:center;padding:10px 12px;border-radius:10px}
+.menu button:hover{background:var(--surface)}
+.menu .mi-name{font-weight:600;font-size:14.5px}
+.menu .mi-desc{font-size:12.5px;color:var(--muted)}
+.menu .mi-check{margin-left:auto;color:var(--accent);font-weight:700}
+.menu hr{border:0;border-top:1px solid var(--border);margin:6px 4px}
+.menu .up{justify-content:center;background:linear-gradient(135deg,#7c5cff,#3ec5ff);color:#fff;font-weight:600;font-size:14px}
+.modal{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px}
+.modal .box{width:100%;max-width:380px;background:var(--bg);border-radius:20px;padding:24px;text-align:center;box-shadow:var(--shadow)}
+.modal .orb{margin:0 auto}
+.modal h2{margin:12px 0 6px;font-size:20px}
+.modal .price{font-size:28px;font-weight:700;margin:6px 0}
+.modal p{color:var(--muted);font-size:14px;margin:6px 0 16px}
+.modal .later{margin-top:8px;color:var(--muted);font-size:14px;padding:8px}
+.thought{font-size:13px;color:var(--muted);margin-bottom:4px}
+.op-status{display:flex;gap:6px;overflow-x:auto;align-items:center;padding-bottom:8px;font-size:12px;color:var(--muted);scrollbar-width:none}
+.op-status span{flex:none}
+.op-status button{flex:none;padding:4px 10px;border-radius:999px;border:1px dashed var(--border);font-size:12px;white-space:nowrap}
+.op-status button.on{background:var(--accent);color:var(--accent-text);border:1px solid var(--accent)}
 
 /* ---------- operator ---------- */
 #opLogin{min-height:100dvh;display:grid;place-items:center;padding:16px}
@@ -216,7 +238,8 @@ textarea,input{font:inherit;color:inherit}
 <div id="visitor" class="hidden">
   <header class="topbar" id="topbar">
     <div class="brand"><div class="orb live"></div>챗 클로나이</div>
-    <span class="badge">2.1 Pro</span>
+    <button class="badge model-btn" id="modelBtn" type="button"><span id="modelName">2.1 Pro</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="menu hidden" id="modelMenu"></div>
     <div class="spacer"></div>
     <button class="btn-ghost" id="newChat" title="새 대화">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -250,6 +273,8 @@ textarea,input{font:inherit;color:inherit}
     <div class="foot">챗 클로나이는 실수를 할 수 있습니다. 중요한 정보는 확인하세요.</div>
   </div>
 </div>
+
+<div class="modal hidden" id="upModal"><div class="box"><div class="orb lg"></div><h2 id="upTitle"></h2><div class="price" id="upPrice"></div><p id="upDesc"></p><button class="btn" id="upBuy" type="button"></button><button class="later" id="upLater" type="button">나중에</button></div></div>
 
 <!-- 운영자 로그인 -->
 <div id="opLogin" class="hidden">
@@ -287,6 +312,7 @@ textarea,input{font:inherit;color:inherit}
     <div class="placeholder" id="chatEmpty">왼쪽 목록에서 대화를 선택하면<br>여기서 답장할 수 있어요.</div>
     <div class="op-thread hidden" id="opThread"><div class="inner" id="opMsgs"></div></div>
     <div class="op-compose hidden" id="opCompose">
+      <div class="op-status" id="opStatus"></div>
       <div class="quick cats" id="quickCats"></div>
       <div class="quick" id="quick"></div>
       <form class="composer" id="opForm">
@@ -342,7 +368,7 @@ function md(src) {
 function listMsgs(room) {
   const out = [];
   for (const role of ['u', 'a']) for (const [k, v] of Object.entries(room?.[role] || {}))
-    if (v && typeof v.t === 'string') out.push({ k, role, t: v.t, ts: v.ts || 0 });
+    if (v && typeof v.t === 'string') out.push({ k, role, t: v.t, ts: v.ts || 0, m: v.m });
   return out.sort((x, y) => (x.ts - y.ts) || (x.k < y.k ? -1 : 1));
 }
 function autoGrow(ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 200) + 'px'; }
@@ -373,6 +399,46 @@ function runVisitor() {
   let rendered = new Set(), firstLoad = true, msgCount = 0, streamChain = Promise.resolve(), streaming = 0, lastData = {}, opOnline = null;
 
   scroller.addEventListener('scroll', () => $('topbar').classList.toggle('scrolled', scroller.scrollTop > 4));
+  const MODELS = {
+    flash: { name: 'Flash', full: '챗 클로나이 Flash', desc: '빠른 답변 · 가벼운 질문에 딱', speed: 0.45, think: '빠르게 답변 준비 중…' },
+    pro: { name: '2.1 Pro', full: '챗 클로나이 2.1 Pro', desc: '균형 잡힌 기본 모델', speed: 1, think: '생각하는 중…' },
+    ultra: { name: 'Ultra', full: '챗 클로나이 Ultra', desc: '고급 추론 · 느리지만 깊게 생각해요', speed: 1.4, think: '깊게 추론하는 중…' }
+  };
+  let model = MODELS[lsGet('lumi_model')] ? lsGet('lumi_model') : 'pro', thinkTimer = null, joked = false;
+  function renderModelMenu() {
+    $('modelName').textContent = MODELS[model].name;
+    $('modelMenu').innerHTML = Object.entries(MODELS).map(([k, m]) => `<button type="button" data-m="${k}"><div><div class="mi-name">${m.full}</div><div class="mi-desc">${m.desc}</div></div>${k === model ? '<span class="mi-check">✓</span>' : ''}</button>`).join('')
+      + '<button type="button" data-m="max"><div><div class="mi-name">챗 클로나이 Max 🔒</div><div class="mi-desc">최상위 모델 · Pro 구독 필요</div></div></button><hr><button type="button" class="up" data-m="up">✨ Pro로 업그레이드</button>';
+  }
+  function showUpgrade() {
+    joked = false;
+    $('upTitle').textContent = '챗 클로나이 Pro';
+    $('upPrice').textContent = '월 99,000원';
+    $('upDesc').textContent = 'Max 모델, 무제한 고급 추론, 우선 응답 속도까지 모두 이용하세요.';
+    $('upBuy').textContent = '지금 업그레이드';
+    $('upLater').classList.remove('hidden');
+    $('upModal').classList.remove('hidden');
+  }
+  renderModelMenu();
+  $('modelBtn').addEventListener('click', e => { e.stopPropagation(); $('modelMenu').classList.toggle('hidden'); });
+  document.addEventListener('click', e => { if (!e.target.closest('#modelMenu')) $('modelMenu').classList.add('hidden'); });
+  $('modelMenu').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    $('modelMenu').classList.add('hidden');
+    if (b.dataset.m === 'max' || b.dataset.m === 'up') { showUpgrade(); return; }
+    model = b.dataset.m; lsSet('lumi_model', model); renderModelMenu(); updateThinking(lastData);
+  });
+  $('upBuy').addEventListener('click', () => {
+    if (joked) { $('upModal').classList.add('hidden'); return; }
+    joked = true;
+    $('upTitle').textContent = '농담이에요 😎';
+    $('upPrice').textContent = '';
+    $('upDesc').textContent = '지금은 베타 기간이라 모든 기능이 무료예요. 결제는 되지 않았어요!';
+    $('upBuy').textContent = '좋아요';
+    $('upLater').classList.add('hidden');
+  });
+  $('upLater').addEventListener('click', () => $('upModal').classList.add('hidden'));
+  $('upModal').addEventListener('click', e => { if (e.target.id === 'upModal') $('upModal').classList.add('hidden'); });
 
   onAuthStateChanged(auth, user => {
     if (!user) { signInAnonymously(auth).catch(e => showError('연결에 실패했어요. 잠시 후 다시 시도해 주세요. (' + e.code + ')')); return; }
@@ -403,7 +469,8 @@ function runVisitor() {
     for (const m of msgs) {
       if (rendered.has(m.k)) continue;
       rendered.add(m.k);
-      const el = m.role === 'u' ? userEl(m.t) : aiEl(m.t, !firstLoad);
+      const prev = msgs[msgs.indexOf(m) - 1];
+      const el = m.role === 'u' ? userEl(m.t) : aiEl(m.t, !firstLoad, prev && prev.role === 'u' && prev.m === 'ultra' ? Math.max(1, Math.round((m.ts - prev.ts) / 1000)) : 0);
       msgsEl.appendChild(el);
     }
     firstLoad = false;
@@ -419,7 +486,11 @@ function runVisitor() {
     const show = pendingReply(data) && streaming === 0;
     const th = $('vThinking');
     th.classList.toggle('hidden', !show);
-    $('vThinkLabel').textContent = data.typing ? '답변 생성 중…' : (opOnline === false ? '요청이 많아 대기 중… 답변이 늦어질 수 있어요' : '생각하는 중…');
+    const lastU = listMsgs(data).filter(x => x.role === 'u').pop();
+    const base = data.st || (data.typing ? '답변 생성 중…' : (opOnline === false ? '요청이 많아 대기 중… 답변이 늦어질 수 있어요' : MODELS[model].think));
+    $('vThinkLabel').textContent = show && model === 'ultra' && lastU ? base + ' ' + Math.max(0, Math.round((Date.now() - lastU.ts) / 1000)) + '초' : base;
+    clearTimeout(thinkTimer);
+    if (show && model === 'ultra') thinkTimer = setTimeout(() => updateThinking(lastData), 1000);
     document.body.classList.toggle('busy', show || streaming > 0);
   }
 
@@ -430,10 +501,10 @@ function runVisitor() {
     d.firstChild.textContent = t;
     return d;
   }
-  function aiEl(t, animate) {
+  function aiEl(t, animate, thought) {
     const d = document.createElement('div');
     d.className = 'msg a';
-    d.innerHTML = '<div class="orb sm"></div><div class="content"><div class="md"></div><div class="actions">'
+    d.innerHTML = '<div class="orb sm"></div><div class="content">' + (thought ? '<div class="thought">✦ ' + thought + '초 동안 생각함</div>' : '') + '<div class="md"></div><div class="actions">'
       + '<button data-act="copy" title="복사">' + ICON.copy + '</button>'
       + '<button data-act="up" title="좋아요">' + ICON.up + '</button>'
       + '<button data-act="down" title="별로예요">' + ICON.down + '</button></div></div>';
@@ -462,7 +533,7 @@ function runVisitor() {
   function stream(body, text) {
     return new Promise(res => {
       const chars = Array.from(text), total = chars.length;
-      const dur = Math.min(6000, Math.max(500, total * 30));
+      const sp = MODELS[model].speed, dur = Math.min(6000 * sp, Math.max(500 * sp, total * 30 * sp));
       let start = null;
       setTimeout(function step() {
         const now = performance.now();
@@ -500,7 +571,7 @@ function runVisitor() {
     const key = push(ref(db, 'rooms/' + roomId + '/u')).key;
     try {
       await update(ref(db, 'rooms/' + roomId), {
-        ['u/' + key]: { t: text, ts: serverTimestamp() },
+        ['u/' + key]: { t: text, ts: serverTimestamp(), m: model },
         updated: serverTimestamp()
       });
       if (opOnline !== true && MAIL_HOOK) fetch(MAIL_HOOK, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ room: roomId, text, first }) }).catch(() => {});
@@ -630,6 +701,16 @@ function runOperator() {
     const opRef = push(ref(db, 'status/ops'));
     onValue(ref(db, '.info/connected'), s => { if (s.val() === true) onDisconnect(opRef).remove().then(() => set(opRef, true)).catch(() => {}); });
 
+    const STATUS = ['자동', '생각하는 중…', '웹 검색 중…', '자료를 분석하는 중…', '심층 추론 중…', '코드를 실행하는 중…', '답변 작성 중…', '서버 혼잡으로 대기 중…'];
+    const renderStatus = () => {
+      const cur = (sel && rooms[sel] && rooms[sel].st) || '';
+      $('opStatus').innerHTML = '<span>친구 화면 표시:</span>' + STATUS.map((s, i) => `<button type="button" data-i="${i}" class="${(i === 0 ? !cur : cur === s) ? 'on' : ''}">${esc(s)}</button>`).join('');
+    };
+    $('opStatus').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b || !sel) return;
+      const i = +b.dataset.i;
+      set(ref(db, 'rooms/' + sel + '/st'), i === 0 ? null : STATUS[i]).catch(err => alert('상태 변경 실패: ' + (err.code || err.message)));
+    });
     let cat = '기본';
     const renderQuick = () => {
       $('quickCats').innerHTML = Object.keys(QUICK_CATS).map(c => `<button type="button" class="${c === cat ? 'on' : ''}">${esc(c)}</button>`).join('');
@@ -722,8 +803,10 @@ function runOperator() {
       if (!r) { $('chatTitle').textContent = '대화를 선택하세요'; $('chatSub').textContent = ''; return; }
       const { who, no } = label(sel);
       $('chatTitle').textContent = `${who} · 대화 #${no}`;
-      $('chatSub').textContent = r.typing ? '방문자 화면: 답변 생성 중…' : (listMsgs(r).at(-1)?.role === 'u' ? '방문자 화면: 생각하는 중…' : '답장 완료');
-      avatar($('chatAvatar'), sel);
+      const lastU = listMsgs(r).filter(x => x.role === 'u').pop();
+      const mName = { flash: 'Flash (빠름)', pro: '2.1 Pro', ultra: 'Ultra (고급 추론)' }[lastU && lastU.m] || '2.1 Pro';
+      $('chatSub').textContent = '모델: ' + mName + ' · ' + (listMsgs(r).at(-1)?.role === 'u' ? (r.st ? '표시: ' + r.st : (r.typing ? '표시: 답변 생성 중…' : '답장 대기 중')) : '답장 완료');
+      avatar($('chatAvatar'), sel); renderStatus();
       const stick = forceBottom || nearBottom(thread);
       msgsEl.innerHTML = listMsgs(r).map(m =>
         `<div class="om ${m.role}"><div class="b md">${m.role === 'a' ? md(m.t) : esc(m.t)}</div><span class="ts">${fmt(m.ts)}</span></div>`).join('');
@@ -766,7 +849,7 @@ function runOperator() {
       try {
         await update(ref(db, 'rooms/' + room), {
           ['a/' + key]: { t: text, ts: serverTimestamp() },
-          updated: serverTimestamp(), seen: serverTimestamp(), typing: null
+          updated: serverTimestamp(), seen: serverTimestamp(), typing: null, st: null
         });
         onDisconnect(ref(db, 'rooms/' + room + '/typing')).cancel().catch(() => {});
       } catch (e) { alert('전송 실패: ' + (e.code || e.message)); input.value = text; autoGrow(input); sendBtn.disabled = false; }
