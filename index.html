@@ -18,7 +18,9 @@ window.LUMI_CONFIG = {
     messagingSenderId: "455949096791",
     appId: "1:455949096791:web:d2ef953e91aaf4cd189012"
   },
-  OWNER_EMAIL: "lumi.operator@example.com"
+  OWNER_EMAIL: "lumi.operator@example.com",
+  // 새 대화 알림 메일을 보낼 Google Apps Script 웹 앱 주소 (비워 두면 메일 안 보냄)
+  MAIL_HOOK: "https://script.google.com/macros/s/AKfycbxMfuoXXS40s4dig7AgulS5rlf6WXd5PXrFA_b2EqrwwSItFDy2N6RHojhgkW7hFXnbIw/exec"
 };
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
@@ -298,7 +300,7 @@ textarea,input{font:inherit;color:inherit}
 </div>
 
 <script type="module">
-const { firebaseConfig, OWNER_EMAIL } = window.LUMI_CONFIG;
+const { firebaseConfig, OWNER_EMAIL, MAIL_HOOK } = window.LUMI_CONFIG;
 const $ = id => document.getElementById(id);
 const IS_OP = location.hash.replace('#', '').toLowerCase() === 'operator';
 window.addEventListener('hashchange', () => location.reload());
@@ -494,12 +496,14 @@ function runVisitor() {
     text = text.trim().slice(0, 4000);
     if (!text || !roomId) return;
     input.value = ''; autoGrow(input); sendBtn.disabled = true;
+    const first = msgCount === 0;
     const key = push(ref(db, 'rooms/' + roomId + '/u')).key;
     try {
       await update(ref(db, 'rooms/' + roomId), {
         ['u/' + key]: { t: text, ts: serverTimestamp() },
         updated: serverTimestamp()
       });
+      if (first && MAIL_HOOK) fetch(MAIL_HOOK, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ room: roomId, text }) }).catch(() => {});
     } catch (e) { showError('메시지를 보내지 못했어요. (' + (e.code || e.message) + ')'); }
   }
 
